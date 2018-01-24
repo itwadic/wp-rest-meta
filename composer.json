@@ -1,0 +1,26 @@
+{
+    "name": "developwithwp/wp-rest-meta",
+    "description": "PHP Library which creates a controlled way to register post meta with the rest api.",
+    "type": "package",
+    "keywords": [],
+    "homepage": "https://github.com/mrbobbybryant/wp-rest-meta",
+    "license": "GPL-2.0+",
+    "author": {
+      "name": "Bobby Bryant",
+      "email": "bobby@developwithwp.com",
+      "homepage": "Bobby Bryant",
+      "role": "Developer"
+    },
+    "minimum-stability": "dev",
+    "repositories" : [
+      {
+        "type" : "composer",
+        "url"  : "https://wpackagist.org"
+      }
+    ],
+    "require": {},
+    "require-dev": {},
+    "autoload": {
+      "files": [ "index.php" ]
+    }
+  }
