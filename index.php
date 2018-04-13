@@ -63,15 +63,15 @@ function get_meta_key_value( $keys, $key ) {
  * crossfield_team_bio into just bio in the rest api response.
  * @return void
  */
-function register_model_meta( $model, $post_type, $modify_keys = false ) {
+function register_model_meta( $model, $post_type, $modify_keys = false, $type = 'post' ) {
 
 	foreach ( $model as $item ) {
 		if ( ! isset( $item['show_in_rest'] ) || false === $item['show_in_rest'] ) {
 			continue;
 		}
 
-		$get_func = function( $object ) use ( $item ) {
-			$metadata = get_post_meta( $object['id'], $item['key'], true );
+		$get_func = function( $object ) use ( $item, $type ) {
+			$metadata = get_type_meta( $type, $object['id'], $item['key'] );
 
 			if ( isset( $item['get_cb'] ) && is_callable( $item['get_cb'] ) ) {
 				$metadata = call_user_func_array( $item['get_cb'], [ $metadata ] );
@@ -84,9 +84,14 @@ function register_model_meta( $model, $post_type, $modify_keys = false ) {
 			$item['key'] = str_replace( sprintf( '%s_', $modify_keys ), '', $item['key'] );
 		}
 
-		$update_func = function( $value, $object ) use ( $item ) {
-			$result = call_user_func_array( 'get_sanitization_cb', [ $value ] );
-			return update_post_meta( $object->ID, $item['key'], $result );
+		$update_func = function( $value, $object ) use ( $item, $type ) {
+			$sanitization_cb = get_sanitization_cb( $item );
+			$result          = call_user_func_array( $sanitization_cb, [ $value ] );
+
+			if ( isset( $item['update_cb'] ) && is_callable( $item['update_cb'] ) ) {
+				return call_user_func_array( $item['update_cb'], [ $item, $object->ID, $result ] );
+			}
+			return update_type_meta( $type, $object->ID, $item['key'], $result );
 		};
 
 		register_rest_field(
@@ -129,4 +134,43 @@ function get_sanitization_cb( $item ) {
 		default:
 			return 'sanitize_text_field';
 	}
+}
+
+/**
+ * Wrapper function which determines which type of meta we need based on the input type.
+ *
+ * @param [string]     $type Object Type Name. (post, user, or term).
+ * @param [int|string] $object_id The Object ID.
+ * @param [string]     $key The meta key to retrieve.
+ * @return mixed
+ */
+function get_type_meta( $type, $object_id, $key ) {
+	if ( 'post' === $type ) {
+		return get_post_meta( $object_id, $key, true );
+	} elseif ( 'user' === $type ) {
+		return get_user_meta( $object_id, $key, true );
+	} elseif ( 'term' === $type ) {
+		return get_term_meta( $object_id, $key, true );
+	}
+	return '';
+}
+
+/**
+ * Wrapper function which handles updating the right meta by type.
+ *
+ * @param [string]     $type Object Type Name. (post, user, or term).
+ * @param [int|string] $object_id The Object ID.
+ * @param [string]     $key The meta key to retrieve.
+ * @param [mixed]      $result The Data to save.
+ * @return boolean
+ */
+function update_type_meta( $type, $object_id, $key, $result ) {
+	if ( 'post' === $type ) {
+		return update_post_meta( $object_id, $key, $result );
+	} elseif ( 'user' === $type ) {
+		return update_user_meta( $object_id, $key, $result );
+	} elseif ( 'term' === $type ) {
+		return update_term_meta( $object_id, $key, $result );
+	}
+	return true;
 }
