@@ -1,5 +1,5 @@
 {
-    "name": "developwithwp/wp-rest-meta",
+    "name": "itwadic/wp-rest-meta",
     "description": "PHP Library which creates a controlled way to register post meta with the rest api.",
     "type": "package",
     "keywords": [],
